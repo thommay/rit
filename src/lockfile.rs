@@ -1,12 +1,12 @@
-use std::path::{PathBuf, Path};
-use std::fs::File;
 use std::cell::RefCell;
+use std::fs::File;
 use std::io::Write;
+use std::path::{Path, PathBuf};
 
-use failure::Error;
 use failure::format_err;
+use failure::Error;
 
-#[derive(Debug,Default)]
+#[derive(Debug, Default)]
 pub struct Lockfile {
     path: PathBuf,
     lock: PathBuf,
@@ -20,14 +20,21 @@ impl Lockfile {
             let mut name = name.to_os_string();
             name.push(".lock");
             let lock = path.with_file_name(name);
-            Ok(Self{path, lock, file: RefCell::new(None)})
+            Ok(Self {
+                path,
+                lock,
+                file: RefCell::new(None),
+            })
         } else {
             Err(format_err!("Path did not have a file name!"))
         }
     }
 
     pub fn try_lock(mut self) -> Result<Self, Error> {
-        let file = std::fs::OpenOptions::new().write(true).create_new(true).open(&self.lock)?;
+        let file = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&self.lock)?;
         self.file = RefCell::new(Some(file));
         Ok(self)
     }
@@ -36,7 +43,9 @@ impl Lockfile {
         if let Some(ref mut file) = *self.file.borrow_mut() {
             file.write(content.as_bytes())?;
         } else {
-            return Err(format_err!("Unable to get reference to file; did you already lock it?"));
+            return Err(format_err!(
+                "Unable to get reference to file; did you already lock it?"
+            ));
         }
         Ok(self)
     }
@@ -48,5 +57,3 @@ impl Lockfile {
         Ok(())
     }
 }
-
-
